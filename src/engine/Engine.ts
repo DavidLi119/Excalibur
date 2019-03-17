@@ -2,7 +2,6 @@ import { EX_VERSION } from './';
 import './Polyfill';
 import { ICanUpdate, ICanDraw, ICanInitialize } from './Interfaces/LifecycleEvents';
 import { ILoadable } from './Interfaces/ILoadable';
-import { Promise } from './Promises';
 import { Vector } from './Algebra';
 import { UIActor } from './UIActor';
 import { Actor } from './Actor';
@@ -1287,8 +1286,7 @@ O|===|* >________________>\n\
    */
   public start(loader?: ILoader): Promise<any> {
     if (!this._compatible) {
-      var promise = new Promise();
-      return promise.reject('Excalibur is incompatible with your browser');
+      return Promise.reject('Excalibur is incompatible with your browser');
     }
 
     var loadingComplete: Promise<any>;
@@ -1405,21 +1403,21 @@ O|===|* >________________>\n\
    * @param loader  Some [[ILoadable]] such as a [[Loader]] collection, [[Sound]], or [[Texture]].
    */
   public load(loader: ILoadable): Promise<any> {
-    var complete = new Promise<any>();
+    var complete = new Promise<any>((resolve) => {
+      this._isLoading = true;
 
-    this._isLoading = true;
-
-    loader.load().then(() => {
-      if (this._suppressPlayButton) {
-        setTimeout(() => {
+      loader.load().then(() => {
+        if (this._suppressPlayButton) {
+          setTimeout(() => {
+            this._isLoading = false;
+            resolve();
+            // Delay is to give the logo a chance to show, otherwise don't delay
+          }, 500);
+        } else {
           this._isLoading = false;
-          complete.resolve();
-          // Delay is to give the logo a chance to show, otherwise don't delay
-        }, 500);
-      } else {
-        this._isLoading = false;
-        complete.resolve();
-      }
+          resolve();
+        }
+      });
     });
 
     return complete;
